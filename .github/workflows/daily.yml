@@ -1,0 +1,43 @@
+name: Daily carousel
+
+on:
+  schedule:
+    - cron: "23 16 * * *"     # tous les jours à 16h23 UTC (17h23 à Paris en hiver)
+  workflow_dispatch:          # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: write             # pour enregistrer data/history.json
+
+concurrency: daily-carousel
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate carousel
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: python run_daily.py
+
+      - name: Upload slides
+        uses: actions/upload-artifact@v4
+        with:
+          name: carousel-${{ github.run_id }}
+          path: output/
+          retention-days: 30
+
+      - name: Save history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/history.json
+          git diff --cached --quiet || git commit -m "Carousel du $(date -u +%F)"
+          git push
