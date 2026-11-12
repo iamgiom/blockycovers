@@ -123,8 +123,8 @@ def build(image_path, outdir, title, artist, year, credit="", levels=DEFAULT_LEV
     slides.append(answer_slide(im, title, artist, year, credit))
     paths = []
     for i, s in enumerate(slides, 1):
-        p = os.path.join(outdir, f"slide_{i}.png")
-        s.save(p)
+        p = os.path.join(outdir, f"slide_{i}.jpg")     # JPEG : seul format accepté par l'API Instagram
+        s.save(p, "JPEG", quality=95, subsampling=0)
         paths.append(p)
     contact_sheet(slides).save(os.path.join(outdir, "preview.png"))
     return paths

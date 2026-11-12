@@ -11,13 +11,14 @@ import datetime
 import json
 import os
 import sys
+import tempfile
 
 import pixel_carousel
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 QUEUE = os.path.join(HERE, "data", "albums.csv")      # file d'attente (artist,title)
 HISTORY = os.path.join(HERE, "data", "history.json")  # albums déjà traités
-OUTPUT = os.path.join(HERE, "output")
+OUTPUT = os.path.join(HERE, "posts")             # un dossier par date, enregistré dans le dépôt
 
 CAPTION = """Can you name this album from its pixels? 🎵
 
@@ -65,7 +66,8 @@ def main():
     else:
         import discogs
         meta = discogs.find_album(artist, title)
-        cover = discogs.download_image(meta["image_url"], os.path.join(outdir, "cover_source.jpg"))
+        cover = discogs.download_image(meta["image_url"],
+                                       os.path.join(tempfile.mkdtemp(), "cover_source.jpg"))
 
     slides = pixel_carousel.build(cover, outdir, meta["title"], meta["artist"],
                                   meta["year"], meta["label"])
@@ -77,6 +79,10 @@ def main():
     with open(HISTORY, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
+    gh_out = os.environ.get("GITHUB_OUTPUT")          # transmet le dossier à l'étape de publication
+    if gh_out:
+        with open(gh_out, "a", encoding="utf-8") as f:
+            f.write(f"post_dir={os.path.relpath(outdir, HERE)}\n")
     print(f"{today} : {artist} - {title} ({len(slides)} slides) -> {outdir}")
     return 0
 

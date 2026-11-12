@@ -9,10 +9,21 @@ Génère chaque jour un carrousel Instagram : une pochette d'album pixelisée en
 2. Chaque jour, GitHub lance `run_daily.py`, qui prend le premier album pas encore traité.
 3. `discogs.py` cherche l'album sur Discogs, récupère l'année, le label et la pochette.
 4. `pixel_carousel.py` fabrique les 4 slides en 1080×1350 et une planche d'aperçu.
-5. Les slides sont disponibles en téléchargement dans l'onglet **Actions** du dépôt,
+5. Les slides sont enregistrées dans `posts/AAAA-MM-JJ/`, consultables directement sur GitHub,
    et l'album est noté dans `data/history.json` pour ne jamais ressortir.
+6. `instagram.py` publie le carrousel sur Instagram (si la case « Publier sur Instagram »
+   est cochée au lancement manuel, ou systématiquement en mode planifié).
 
-La publication sur Instagram n'est pas encore branchée : c'est l'étape suivante.
+La planification quotidienne est en pause : voir le haut de `.github/workflows/daily.yml`.
+
+## Secrets nécessaires
+
+Dans Settings > Secrets and variables > Actions :
+
+- `DISCOGS_TOKEN` : jeton personnel Discogs.
+- `INSTAGRAM_TOKEN` : jeton d'accès du compte Instagram, généré dans l'application Meta.
+
+Le dépôt doit être public pour que Meta puisse télécharger les slides.
 
 ## Mise en place (une seule fois)
 
