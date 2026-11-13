@@ -21,7 +21,7 @@ La planification quotidienne est en pause : voir le haut de `.github/workflows/d
 Dans Settings > Secrets and variables > Actions :
 
 - `DISCOGS_TOKEN` : jeton personnel Discogs.
-- `INSTAGRAM_TOKEN` : jeton d'accès du compte Instagram, généré dans l'application Meta.
+- `INSTAGRAM_TOKEN` : jeton généré dans l'application Meta (formule « connexion unifiée »).
 
 Le dépôt doit être public pour que Meta puisse télécharger les slides.
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Publie un carrousel sur Instagram via l'API officielle (Instagram Login).
+"""Publie un carrousel sur Instagram via l'API officielle (connexion unifiée).
 
     python3 instagram.py posts/2026-11-12             # publie
     python3 instagram.py posts/2026-11-12 --dry-run   # affiche les URL, ne publie rien
 
 Variables d'environnement :
-    INSTAGRAM_TOKEN   jeton d'accès du compte (secret)
+    INSTAGRAM_TOKEN        jeton d'accès généré dans l'application Meta (secret)
+    INSTAGRAM_ACCOUNT_ID   facultatif : identifiant du compte, sinon détecté tout seul
     MEDIA_BASE_URL    adresse publique du dépôt, ex.
                       https://raw.githubusercontent.com/iamgiom/blockycovers/main
 
@@ -21,7 +22,8 @@ import time
 
 import requests
 
-API = "https://graph.instagram.com"
+# Connexion unifiée : serveur graph.facebook.com (et non graph.instagram.com).
+API = os.environ.get("INSTAGRAM_API", "https://graph.facebook.com/v27.0")
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -70,10 +72,25 @@ def wait_ready(container_id, token, timeout=120):
         time.sleep(5)
 
 
+def find_account(token):
+    """Identifiant du compte Instagram rattaché au jeton."""
+    forced = os.environ.get("INSTAGRAM_ACCOUNT_ID")
+    if forced:
+        return forced
+    accounts = _call("GET", "me/assigned_instagram_accounts", token).get("data", [])
+    if not accounts:
+        raise InstagramError("Aucun compte Instagram n'est rattaché à ce jeton.")
+    if len(accounts) > 1:
+        print(f"{len(accounts)} comptes rattachés au jeton, le premier est utilisé.")
+    account = accounts[0]
+    if "id" not in account:
+        raise InstagramError(f"Réponse inattendue pour le compte : champs {sorted(account)}")
+    return account["id"]
+
+
 def publish_carousel(urls, caption, token):
-    """Crée les médias, le carrousel, puis publie. Retourne l'identifiant du post."""
-    me = _call("GET", "me", token, fields="user_id,username")
-    user = me["user_id"]
+    """Crée les médias, le carrousel, puis publie. Retourne (compte, identifiant du post)."""
+    user = find_account(token)
     children = []
     for url in urls:
         c = _call("POST", f"{user}/media", token, image_url=url, is_carousel_item="true")
@@ -84,7 +101,11 @@ def publish_carousel(urls, caption, token):
                      children=",".join(children), caption=caption)
     wait_ready(carousel["id"], token)
     post = _call("POST", f"{user}/media_publish", token, creation_id=carousel["id"])
-    return me.get("username", ""), post["id"]
+    try:
+        name = _call("GET", user, token, fields="username").get("username", user)
+    except InstagramError:
+        name = user
+    return name, post["id"]
 
 
 def main():
